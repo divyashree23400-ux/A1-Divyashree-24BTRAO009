@@ -79,12 +79,28 @@ def test_delete_task(client: TestClient) -> None:
 
     get_response = client.get("/tasks/1")
     assert get_response.status_code == 404
+    assert get_response.json() == {"error": "Task not found", "status_code": 404}
 
 
 def test_get_missing_task_returns_404(client: TestClient) -> None:
-    response = client.get("/tasks/99")
+    response = client.get("/tasks/999")
     assert response.status_code == 404
-    assert response.json()["detail"] == "Task not found"
+    assert response.json() == {"error": "Task not found", "status_code": 404}
+
+
+def test_update_missing_task_returns_404(client: TestClient) -> None:
+    response = client.put(
+        "/tasks/999",
+        json={"title": "Updated homework", "student_name": "Alex"},
+    )
+    assert response.status_code == 404
+    assert response.json() == {"error": "Task not found", "status_code": 404}
+
+
+def test_delete_missing_task_returns_404(client: TestClient) -> None:
+    response = client.delete("/tasks/999")
+    assert response.status_code == 404
+    assert response.json() == {"error": "Task not found", "status_code": 404}
 
 
 def test_create_task_rejects_empty_title(client: TestClient) -> None:
@@ -92,4 +108,5 @@ def test_create_task_rejects_empty_title(client: TestClient) -> None:
         "/tasks",
         json={"title": "", "student_name": "Alex"},
     )
-    assert response.status_code == 422
+    assert response.status_code == 400
+    assert response.json() == {"error": "Title must not be empty", "status_code": 400}

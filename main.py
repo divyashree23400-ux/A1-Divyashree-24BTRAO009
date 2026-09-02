@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from models import Task, TaskCreate, TaskUpdate
 
@@ -6,6 +9,42 @@ app = FastAPI(
     title="Student Task API",
     description="A simple in-memory REST API for managing student tasks.",
 )
+
+
+def error_response(message: str, status_code: int) -> JSONResponse:
+    """Return every API error in the same JSON shape."""
+    return JSONResponse(
+        status_code=status_code,
+        content={"error": message, "status_code": status_code},
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> JSONResponse:
+    return error_response(str(exc.detail), exc.status_code)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    for err in exc.errors():
+        location = err.get("loc", ())
+        error_type = err.get("type", "")
+        if "title" in location and error_type in {
+            "string_too_short",
+            "missing",
+            "string_type",
+        }:
+            return error_response("Title must not be empty", 400)
+
+    if exc.errors():
+        message = exc.errors()[0].get("msg", "Invalid request")
+    else:
+        message = "Invalid request"
+    return error_response(message, 400)
 
 # In-memory store: task id -> Task
 tasks: dict[int, Task] = {}
