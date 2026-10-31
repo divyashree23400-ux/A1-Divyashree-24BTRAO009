@@ -110,3 +110,32 @@ def test_create_task_rejects_empty_title(client: TestClient) -> None:
     )
     assert response.status_code == 400
     assert response.json() == {"error": "Title must not be empty", "status_code": 400}
+
+
+def test_create_task_rejects_whitespace_only_title(client: TestClient) -> None:
+    response = client.post(
+        "/tasks",
+        json={"title": "   ", "student_name": "Alex"},
+    )
+    assert response.status_code == 400
+    assert response.json() == {"error": "Title must not be empty", "status_code": 400}
+
+
+def test_update_task_rejects_empty_title(client: TestClient) -> None:
+    client.post(
+        "/tasks",
+        json={"title": "Finish homework", "student_name": "Alex"},
+    )
+    response = client.put("/tasks/1", json={"title": ""})
+    assert response.status_code == 400
+    assert response.json() == {"error": "Title must not be empty", "status_code": 400}
+
+
+def test_update_task_rejects_whitespace_only_title(client: TestClient) -> None:
+    client.post(
+        "/tasks",
+        json={"title": "Finish homework", "student_name": "Alex"},
+    )
+    response = client.put("/tasks/1", json={"title": "   "})
+    assert response.status_code == 400
+    assert response.json() == {"error": "Title must not be empty", "status_code": 400}

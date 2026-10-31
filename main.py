@@ -37,6 +37,7 @@ async def validation_exception_handler(
             "string_too_short",
             "missing",
             "string_type",
+            "value_error",
         }:
             return error_response("Title must not be empty", 400)
 
